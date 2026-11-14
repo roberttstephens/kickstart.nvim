@@ -245,6 +245,11 @@ do
     group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
     callback = function() vim.hl.on_yank() end,
   })
+
+  -- Drupal PHP extensions
+  vim.filetype.add {
+    extension = { module = 'php', install = 'php', theme = 'php', inc = 'php', profile = 'php', engine = 'php' },
+  }
 end
 
 -- Look in ~/.local/share/nvim/site to runtimepath for Treesitter.
@@ -689,11 +694,9 @@ do
         })
       end
 
-      -- The following code creates a keymap to toggle inlay hints in your
-      -- code, if the language server you are using supports them
-      --
-      -- This may be unwanted, since they displace some of your code
+      -- Inlay hints on by default when supported; <leader>th toggles
       if client and client:supports_method('textDocument/inlayHint', event.buf) then
+        vim.lsp.inlay_hint.enable(true, { bufnr = event.buf })
         map('<leader>th', function()
           local on = not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf }
           vim.lsp.inlay_hint.enable(on, { bufnr = event.buf })
@@ -731,6 +734,15 @@ do
     },
     -- Terraform: navigation, hover, completion, validation (Mason installs terraform-ls)
     terraformls = {},
+    -- PHP: completion, navigation, refactoring (Mason phar, runs on system php)
+    phpactor = {
+      init_options = {
+        -- Off by default in phpactor
+        ['language_server_worse_reflection.inlay_hints.enable'] = true,
+        ['language_server_worse_reflection.inlay_hints.types'] = true,
+        ['language_server_worse_reflection.inlay_hints.params'] = true,
+      },
+    },
     -- rust_analyzer = {},
     --
     -- Some languages (like typescript) have entire language plugins that can be useful:
