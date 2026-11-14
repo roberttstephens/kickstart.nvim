@@ -599,6 +599,7 @@ end
 -- SECTION 5: LSP
 -- LSP keymaps, server configuration, Mason tools installations
 -- ============================================================
+-- Expected system-wide (not Mason): node, uv, terraform, tflint, actionlint, shellcheck (optional)
 do
   -- [[ LSP Configuration ]]
   -- Brief aside: **What is LSP?**
@@ -737,6 +738,24 @@ do
     biome = {},
     stylua = {}, -- Used to format Lua code
 
+    gh_actions_ls = {}, -- only attaches to .github/workflows/
+    yamlls = { -- skips workflow files (gh_actions_ls handles those)
+      root_dir = function(bufnr, on_dir)
+        local path = vim.api.nvim_buf_get_name(bufnr)
+        if path:match '/%.github/workflows/' or path:match '/%.forgejo/workflows/' or path:match '/%.gitea/workflows/' then return end
+        on_dir(vim.fs.root(bufnr, { '.git' }) or vim.fs.dirname(path))
+      end,
+      settings = {
+        redhat = { telemetry = { enabled = false } },
+        yaml = {
+          schemaStore = { enable = true, url = 'https://www.schemastore.org/api/json/catalog.json' },
+          validate = true,
+          hover = true,
+          completion = true,
+        },
+      },
+    },
+
     -- Special Lua Config, as recommended by neovim help docs
     lua_ls = {
       on_init = function(client)
@@ -802,8 +821,7 @@ do
     vim.lsp.enable(name)
   end
 
-  -- Servers whose binaries come from the system package manager, not Mason.
-  -- Kept out of `servers` so Mason doesn't install a second copy that shadows the system one on PATH.
+  -- System-installed servers; kept out of `servers` so Mason doesn't install its own copy
   for _, name in ipairs {
     'tflint',
   } do
@@ -1026,7 +1044,7 @@ do
   -- NOTE: You can add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
-  -- require 'custom.plugins'
+  require 'custom.plugins'
 end
 
 -- The line beneath this is called `modeline`. See `:help modeline`
