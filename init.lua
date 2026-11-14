@@ -694,7 +694,11 @@ do
       --
       -- This may be unwanted, since they displace some of your code
       if client and client:supports_method('textDocument/inlayHint', event.buf) then
-        map('<leader>th', function() vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf }) end, '[T]oggle Inlay [H]ints')
+        map('<leader>th', function()
+          local on = not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf }
+          vim.lsp.inlay_hint.enable(on, { bufnr = event.buf })
+          vim.notify('Inlay hints: ' .. tostring(on))
+        end, '[T]oggle Inlay [H]ints')
       end
     end,
   })
@@ -733,7 +737,21 @@ do
     --    https://github.com/pmizio/typescript-tools.nvim
     --
     -- But for many setups, the LSP (`ts_ls`) will work just fine
-    ts_ls = {},
+    ts_ls = {
+      settings = (function()
+        local hints = {
+          includeInlayParameterNameHints = 'all',
+          includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+          includeInlayFunctionParameterTypeHints = true,
+          includeInlayVariableTypeHints = true,
+          includeInlayVariableTypeHintsWhenTypeMatchesName = false,
+          includeInlayPropertyDeclarationTypeHints = true,
+          includeInlayFunctionLikeReturnTypeHints = true,
+          includeInlayEnumMemberValueHints = true,
+        }
+        return { typescript = { inlayHints = hints }, javascript = { inlayHints = hints } }
+      end)(),
+    },
 
     biome = {},
     stylua = {}, -- Used to format Lua code
