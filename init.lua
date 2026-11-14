@@ -705,7 +705,27 @@ do
   local servers = {
     -- clangd = {},
     -- gopls = {},
-    pyright = {},
+    -- Python types/navigation. basedpyright = pyright fork with go-to-implementation, inlay hints,
+    -- semantic tokens. Settings here are defaults; a project's [tool.basedpyright] / [tool.pyright]
+    -- in pyproject.toml (or pyrightconfig.json) takes precedence.
+    basedpyright = {
+      settings = {
+        basedpyright = {
+          disableOrganizeImports = true, -- ruff handles import sorting
+          analysis = {
+            typeCheckingMode = 'standard', -- to match pyright, recommended is stricter.
+          },
+        },
+      },
+    },
+    -- Python linting (and code actions / quick fixes). Formatting is still done by conform's ruff_format.
+    ruff = {
+      on_attach = function(client)
+        client.server_capabilities.hoverProvider = false -- leave hover (K) to basedpyright
+      end,
+    },
+    -- Terraform: navigation, hover, completion, validation (Mason installs terraform-ls)
+    terraformls = {},
     -- rust_analyzer = {},
     --
     -- Some languages (like typescript) have entire language plugins that can be useful:
@@ -781,6 +801,14 @@ do
     vim.lsp.config(name, server)
     vim.lsp.enable(name)
   end
+
+  -- Servers whose binaries come from the system package manager, not Mason.
+  -- Kept out of `servers` so Mason doesn't install a second copy that shadows the system one on PATH.
+  for _, name in ipairs {
+    'tflint',
+  } do
+    if vim.fn.executable(name) == 1 then vim.lsp.enable(name) end
+  end
 end
 
 -- ============================================================
@@ -799,6 +827,8 @@ do
         python = true,
         typescript = true,
         typescriptreact = true,
+        terraform = true,
+        ['terraform-vars'] = true,
       }
       if enabled_filetypes[vim.bo[bufnr].filetype] then
         return { timeout_ms = 500 }
@@ -813,6 +843,8 @@ do
     formatters_by_ft = {
       lua = { 'stylua' },
       python = { 'ruff_format' },
+      terraform = { 'terraform_fmt' }, -- uses the system's terraform binary
+      ['terraform-vars'] = { 'terraform_fmt' },
       javascript = { 'biome' },
       typescript = { 'biome' },
       typescriptreact = { 'biome' },
