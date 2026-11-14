@@ -250,6 +250,14 @@ do
   vim.filetype.add {
     extension = { module = 'php', install = 'php', theme = 'php', inc = 'php', profile = 'php', engine = 'php' },
   }
+
+  -- Compose files (incl. overrides and .ddev/docker-compose.*.yaml) for docker_language_server
+  vim.filetype.add {
+    pattern = {
+      ['.*/docker%-compose[%w%.%-]*%.ya?ml'] = 'yaml.docker-compose',
+      ['.*/compose[%w%.%-]*%.ya?ml'] = 'yaml.docker-compose',
+    },
+  }
 end
 
 -- Look in ~/.local/share/nvim/site to runtimepath for Treesitter.
@@ -604,7 +612,7 @@ end
 -- SECTION 5: LSP
 -- LSP keymaps, server configuration, Mason tools installations
 -- ============================================================
--- Expected system-wide (not Mason): node, uv, terraform, tflint, actionlint, shellcheck (optional)
+-- Expected system-wide (not Mason): node, uv, php, terraform, tflint, actionlint, shellcheck (optional)
 do
   -- [[ LSP Configuration ]]
   -- Brief aside: **What is LSP?**
@@ -709,6 +717,8 @@ do
   -- Enable the following language servers
   --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
   --  See `:help lsp-config` for information about keys and how to configure
+  vim.pack.add { gh 'b0o/SchemaStore.nvim' } -- JSON schemas for jsonls
+
   ---@type table<string, vim.lsp.Config>
   local servers = {
     -- clangd = {},
@@ -767,6 +777,13 @@ do
 
     biome = {},
     stylua = {}, -- Used to format Lua code
+
+    bashls = {}, -- diagnostics need system shellcheck
+    jsonls = { -- formatting stays with biome via conform
+      settings = { json = { schemas = require('schemastore').json.schemas(), validate = { enable = true } } },
+    },
+    docker_language_server = {}, -- Dockerfiles and compose files
+    marksman = {},
 
     gh_actions_ls = {}, -- only attaches to .github/workflows/
     yamlls = { -- skips workflow files (gh_actions_ls handles those)
